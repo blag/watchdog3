@@ -22,9 +22,9 @@ properties([
 ])
 
 // Jenkins slaves we will build on
-slaves = ['OSXSLAVE-DRIVE', 'SLAVE', 'WINSLAVE']
+slaves = ['TWANG', 'SLAVE', 'WINSLAVE']
 labels = [
-    'OSXSLAVE-DRIVE': 'macOS',
+    'TWANG': 'macOS',
     'SLAVE': 'GNU/Linux',
     'WINSLAVE': 'Windows'
 ]
@@ -95,6 +95,10 @@ for (def x in slaves) {
                                 } else {
                                     sh 'chmod +x tools/jenkins.sh'
                                     sh 'tools/jenkins.sh'
+                                    archive 'dist/*.whl'
+                                    if (osi == 'GNU/Linux') {
+                                        archive 'dist/*.zip'
+                                    }
                                 }
                             } catch(e) {
                                 currentBuild.result = 'FAILURE'

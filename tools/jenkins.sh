@@ -4,6 +4,11 @@
 # Global variables
 PYTHON="python -E -s"
 
+build_wheel() {
+    echo ">>> Building the wheel"
+    ${PYTHON} setup.py sdist bdist_wheel
+}
+
 check_vars() {
     # Check required variables
     if [ "${PYTHON_DRIVE_VERSION:=unset}" = "unset" ]; then
@@ -86,6 +91,7 @@ main() {
     install_python "${PYTHON_DRIVE_VERSION}"
     verify_python "${PYTHON_DRIVE_VERSION}"
     launch_tests
+    build_wheel
 }
 
 main

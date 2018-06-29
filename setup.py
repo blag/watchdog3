@@ -91,7 +91,7 @@ class PyTest(TestCommand):
         sys.exit(errno)
 
 
-tests_require = ["pytest", "pytest-cov", "pytest-timeout>=0.3"]
+tests_require = ["pytest", "pytest-cov", "pytest-timeout>=0.3", "wheel>=0.31.1"]
 install_requires = [
     "pathtools>=0.1.1",
     'pyobjc-framework-Cocoa>=4.2.2 ; sys.platform == "darwin"',
