@@ -17,14 +17,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import sys
 import importlib.util
 import os.path
-from setuptools import setup, find_packages
-from setuptools.extension import Extension
+import sys
+from distutils.util import get_platform
+
+from setuptools import find_packages, setup
 from setuptools.command.build_ext import build_ext
 from setuptools.command.test import test as TestCommand
-from distutils.util import get_platform
+from setuptools.extension import Extension
 
 SRC_DIR = "src"
 WATCHDOG_PKG_DIR = os.path.join(SRC_DIR, "watchdog")
