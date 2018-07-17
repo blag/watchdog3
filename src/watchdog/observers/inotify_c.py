@@ -195,10 +195,7 @@ class Inotify(object):
         self._path = path
         self._event_mask = event_mask
         self._is_recursive = recursive
-        if os.path.isdir(path):
-            self._add_dir_watch(path, recursive, event_mask)
-        else:
-            self.add_watch(path)
+        self._add_dir_watch(path, recursive, event_mask)
         self._moved_from_events = dict()
 
     @property
