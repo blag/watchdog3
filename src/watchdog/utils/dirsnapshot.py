@@ -143,6 +143,14 @@ class DirectorySnapshotDiff(object):
         return self._files_moved
 
     @property
+    def files(self):
+        """
+        List of files that had events.
+        """
+        return (self._files_created + self._files_deleted +
+                self._files_modified + self._files_moved)
+
+    @property
     def dirs_modified(self):
         """
         List of directories that were modified.
@@ -172,6 +180,14 @@ class DirectorySnapshotDiff(object):
         List of directories that were created.
         """
         return self._dirs_created
+
+    @property
+    def dirs(self):
+        """
+        List of directories that had events.
+        """
+        return (self.dirs_created + self.dirs_deleted +
+                self.dirs_modified + self.dirs_moved)
 
 
 class DirectorySnapshot(object):

@@ -79,6 +79,17 @@ class PollingEmitter(EventEmitter):
         self._take_snapshot = lambda: DirectorySnapshot(
             self.watch.path, self.watch.is_recursive, stat=stat, listdir=listdir
         )
+        self._is_dir = os.path.isdir(self.watch.path)
+        self._file_path = None
+
+        # If the path is not a directory
+        if not self._is_dir:
+            # Save the watched file for later
+            self._file_path = self._normalize_basename(self.watch.path)
+            # Grab its parent directory
+            self._watch._path = os.path.dirname(self.watch.path)
+            # And don't monitor recursively
+            self._watch._is_recursive = False
 
     def on_thread_start(self):
         self._snapshot = self._take_snapshot()
@@ -107,25 +118,44 @@ class PollingEmitter(EventEmitter):
             events = DirectorySnapshotDiff(self._snapshot, new_snapshot)
             self._snapshot = new_snapshot
 
-            # Files.
-            for src_path in events.files_deleted:
-                self.queue_event(FileDeletedEvent(src_path))
-            for src_path in events.files_modified:
-                self.queue_event(FileModifiedEvent(src_path))
-            for src_path in events.files_created:
-                self.queue_event(FileCreatedEvent(src_path))
-            for src_path, dest_path in events.files_moved:
-                self.queue_event(FileMovedEvent(src_path, dest_path))
+            # If the watched descriptor is a directory, handle it normally
+            if self._is_dir:
+                # Files.
+                for src_path in events.files_deleted:
+                    self.queue_event(FileDeletedEvent(src_path))
+                for src_path in events.files_modified:
+                    self.queue_event(FileModifiedEvent(src_path))
+                for src_path in events.files_created:
+                    self.queue_event(FileCreatedEvent(src_path))
+                for src_path, dest_path in events.files_moved:
+                    self.queue_event(FileMovedEvent(src_path, dest_path))
 
-            # Directories.
-            for src_path in events.dirs_deleted:
-                self.queue_event(DirDeletedEvent(src_path))
-            for src_path in events.dirs_modified:
-                self.queue_event(DirModifiedEvent(src_path))
-            for src_path in events.dirs_created:
-                self.queue_event(DirCreatedEvent(src_path))
-            for src_path, dest_path in events.dirs_moved:
-                self.queue_event(DirMovedEvent(src_path, dest_path))
+                # Directories.
+                for src_path in events.dirs_deleted:
+                    self.queue_event(DirDeletedEvent(src_path))
+                for src_path in events.dirs_modified:
+                    self.queue_event(DirModifiedEvent(src_path))
+                for src_path in events.dirs_created:
+                    self.queue_event(DirCreatedEvent(src_path))
+                for src_path, dest_path in events.dirs_moved:
+                    self.queue_event(DirMovedEvent(src_path, dest_path))
+
+            else:
+                # We only know that the directory changed, so we check for any
+                # changes involving our watched file
+                for src_path in events.files_deleted:
+                    if self._file_path == self._normalize_basename(src_path):
+                        self.queue_event(FileDeletedEvent(src_path))
+                for src_path in events.files_modified:
+                    if self._file_path == self._normalize_basename(src_path):
+                        self.queue_event(FileModifiedEvent(src_path))
+                for src_path in events.files_created:
+                    if self._file_path == self._normalize_basename(src_path):
+                        self.queue_event(FileCreatedEvent(src_path))
+                for src_path, dest_path in events.files_moved:
+                    if self._file_path == self._normalize_basename(src_path) or \
+                       self._file_path == self._normalize_basename(dest_path):
+                        self.queue_event(FileMovedEvent(src_path, dest_path))
 
 
 class PollingObserver(BaseObserver):

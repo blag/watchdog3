@@ -431,6 +431,17 @@ class KqueueEmitter(EventEmitter):
 
         self._kq = select.kqueue()
         self._lock = threading.RLock()
+        self._is_dir = os.path.isdir(self.watch.path)
+        self._file_path = None
+
+        # If the path is not a directory
+        if not self._is_dir:
+            # Save the watched file for later
+            self._file_path = self._normalize_basename(self.watch.path)
+            # Grab its parent directory
+            self._watch._path = os.path.dirname(self.watch.path) or '.'
+            # And don't modify recursively
+            self._watch._is_recursive = False
 
         # A collection of KeventDescriptor.
         self._descriptors = KeventDescriptorSet()
@@ -439,7 +450,7 @@ class KqueueEmitter(EventEmitter):
             self._register_kevent(path, stat.S_ISDIR(stat_info.st_mode))
 
         self._snapshot = DirectorySnapshot(
-            watch.path, watch.is_recursive, walker_callback
+            self.watch.path, self.watch.is_recursive, walker_callback
         )
 
     def _register_kevent(self, path, is_directory):
@@ -547,7 +558,6 @@ class KqueueEmitter(EventEmitter):
         for kev in event_list:
             descriptor = self._descriptors.get_for_fd(kev.ident)
             src_path = descriptor.path
-
             if is_deleted(kev):
                 if descriptor.is_directory:
                     self.queue_event(DirDeletedEvent(src_path))
@@ -576,6 +586,22 @@ class KqueueEmitter(EventEmitter):
                 else:
                     files_renamed.add(src_path)
         return files_renamed, dirs_renamed, dirs_modified
+
+    def _queue_file_events(self, event_list):
+        files_renamed = set()
+        for kev in event_list:
+            descriptor = self._descriptors.get_for_fd(kev.ident)
+            src_path = descriptor.path
+            if self._file_path == self._normalize_basename(src_path):
+                if is_deleted(kev):
+                    self.queue_event(FileDeletedEvent(src_path))
+                elif is_attrib_modified(kev):
+                    self.queue_event(FileModifiedEvent(src_path))
+                elif is_modified(kev):
+                    self.queue_event(FileModifiedEvent(src_path))
+                elif is_renamed(kev):
+                    files_renamed.add(src_path)
+        return files_renamed
 
     def _queue_renamed(self, src_path, is_directory, ref_snapshot, new_snapshot):
         """
@@ -648,25 +674,41 @@ class KqueueEmitter(EventEmitter):
         """
         with self._lock:
             try:
-                event_list = self._read_events(timeout)
-                files_renamed, dirs_renamed, dirs_modified = self._queue_events_except_renames_and_dir_modifications(
-                    event_list
-                )
+                if not self._is_dir:
+                    event_list = self._read_events(timeout)
+                    files_renamed = self._queue_file_events(event_list)
 
-                # Take a fresh snapshot of the directory and update the
-                # saved snapshot.
-                new_snapshot = DirectorySnapshot(
-                    self.watch.path, self.watch.is_recursive
-                )
-                ref_snapshot = self._snapshot
-                self._snapshot = new_snapshot
+                    # Take a fresh snapshot of the directory and update the
+                    # saved snapshot.
+                    new_snapshot = DirectorySnapshot(
+                        self.watch.path, self.watch.is_recursive
+                    )
+                    ref_snapshot = self._snapshot
+                    self._snapshot = new_snapshot
 
-                if files_renamed or dirs_renamed or dirs_modified:
                     for src_path in files_renamed:
                         self._queue_renamed(src_path, False, ref_snapshot, new_snapshot)
-                    for src_path in dirs_renamed:
-                        self._queue_renamed(src_path, True, ref_snapshot, new_snapshot)
-                    self._queue_dirs_modified(dirs_modified, ref_snapshot, new_snapshot)
+
+                else:
+                    event_list = self._read_events(timeout)
+                    files_renamed, dirs_renamed, dirs_modified = self._queue_events_except_renames_and_dir_modifications(
+                        event_list
+                    )
+
+                    # Take a fresh snapshot of the directory and update the
+                    # saved snapshot.
+                    new_snapshot = DirectorySnapshot(
+                        self.watch.path, self.watch.is_recursive
+                    )
+                    ref_snapshot = self._snapshot
+                    self._snapshot = new_snapshot
+
+                    if files_renamed or dirs_renamed or dirs_modified:
+                        for src_path in files_renamed:
+                            self._queue_renamed(src_path, False, ref_snapshot, new_snapshot)
+                        for src_path in dirs_renamed:
+                            self._queue_renamed(src_path, True, ref_snapshot, new_snapshot)
+                        self._queue_dirs_modified(dirs_modified, ref_snapshot, new_snapshot)
             except OSError as e:
                 if e.errno == errno.EBADF:
                     # logging.debug(e)
