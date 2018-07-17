@@ -17,6 +17,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import threading
 
 from ..utils import BaseThread
@@ -105,6 +106,15 @@ class EventEmitter(BaseThread):
         self._event_queue = event_queue
         self._watch = watch
         self._timeout = timeout
+
+    def _normalize_basename(self, pathname):
+        # Chomp ending slashes so os.path.basename gives something useful
+        while os.path.basename(pathname) == '':
+            pathname = pathname[:-1]
+        return os.path.basename(pathname)
+
+    def _normalize_basenames(self, pathnames):
+        return [self._normalize_basename(path) for path in pathnames]
 
     @property
     def timeout(self):
@@ -270,7 +280,7 @@ class BaseObserver(EventDispatcher):
         :type event_handler:
             :class:`watchdog.events.FileSystemEventHandler` or a subclass
         :param path:
-            Directory path that will be monitored.
+            File or directory path that will be monitored.
         :type path:
             ``str``
         :param recursive:
