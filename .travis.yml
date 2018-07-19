@@ -44,8 +44,6 @@ before_install:
 before_script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source $HOME/miniconda/bin/activate venv; fi
   - pip install --upgrade setuptools
-  - pip install pathtools3 monotonic pytest pytest-cov pytest-timeout coveralls
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then pip install pyobjc-framework-Cocoa\>=4.2.2 pyobjc-framework-FSEvents\>=4.2.2; fi
 script:
   - PYTHONPATH=src python setup.py test
 after_script:
