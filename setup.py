@@ -35,7 +35,7 @@ try:
     )
     version = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(version)
-except ImportError:
+except (ImportError, AttributeError):
     import imp
     version = imp.load_source('version', os.path.join(WATCHDOG_PKG_DIR, 'version.py'))
 
