@@ -103,6 +103,7 @@ before_install:
 before_script:
   - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then source $HOME/miniconda/bin/activate venv; fi
   - pip install --upgrade setuptools
+  - pip install coveralls
 script:
   - PYTHONPATH=src python setup.py test
 after_script:
