@@ -24,19 +24,78 @@ matrix:
     # Use generic language for osx
     - os: osx
       language: generic
-      env: PYTHON_VERSION=2.7
+      env:
+        - PYTHON_VERSION=2.7
     - os: osx
       language: generic
-      env: PYTHON_VERSION=3.4
+      env:
+        - PYTHON_VERSION=2.7
+        - FSEVENTS_VERSION=1
     - os: osx
       language: generic
-      env: PYTHON_VERSION=3.5
+      env:
+        - PYTHON_VERSION=2.7
+        - FSEVENTS_VERSION=2
+
     - os: osx
       language: generic
-      env: PYTHON_VERSION=3.6
+      env:
+        - PYTHON_VERSION=3.4
     - os: osx
       language: generic
-      env: PYTHON_VERSION=3.7
+      env:
+        - PYTHON_VERSION=3.4
+        - FSEVENTS_VERSION=1
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.4
+        - FSEVENTS_VERSION=2
+
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.5
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.5
+        - FSEVENTS_VERSION=1
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.5
+        - FSEVENTS_VERSION=2
+
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.6
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.6
+        - FSEVENTS_VERSION=1
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.6
+        - FSEVENTS_VERSION=2
+
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.7
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.7
+        - FSEVENTS_VERSION=1
+    - os: osx
+      language: generic
+      env:
+        - PYTHON_VERSION=3.7
+        - FSEVENTS_VERSION=2
 
 before_install:
   - .travis/install.sh

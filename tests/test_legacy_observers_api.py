@@ -61,6 +61,14 @@ class TestEventEmitter(unittest.TestCase):
         event_emitter = EventEmitter(event_queue, watch, timeout=1)
         event_emitter.queue_event(FileModifiedEvent("/foobar/blah"))
 
+    def test__normalize_basename(self):
+        event_queue = EventQueue()
+        watch = ObservedWatch("/foobar", True)
+        event_emitter = EventEmitter(event_queue, watch, timeout=1)
+        self.assertEqual(
+            event_emitter._normalize_basenames(['/dir/thing///////']),
+            ['thing'])
+
 
 class TestEventDispatcher(unittest.TestCase):
     def test_dispatch_event(self):

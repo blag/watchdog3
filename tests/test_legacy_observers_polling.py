@@ -43,7 +43,7 @@ def p(*args):
     return os.path.join(temp_dir, *args)
 
 
-class TestPollingEmitter(unittest.TestCase):
+class TestDirPollingEmitter(unittest.TestCase):
     def setUp(self):
         self.event_queue = Queue()
         self.watch = ObservedWatch(temp_dir, True)
@@ -130,6 +130,59 @@ class TestPollingEmitter(unittest.TestCase):
         #   * non-unique
         # A multiset! Python's collections.Counter class seems appropriate.
         expected = set([DirDeletedEvent(os.path.dirname(p("")))])
+
+        got = set()
+        while True:
+            try:
+                event, _ = self.event_queue.get_nowait()
+                got.add(event)
+            except Empty:
+                break
+
+        self.assertEqual(expected, got)
+
+
+class TestFilePollingEmitter(unittest.TestCase):
+    def setUp(self):
+        self.filename = p('test.txt')
+        # self.to_filename = p('test2.txt')
+        self.event_queue = Queue()
+        self.watch = ObservedWatch(self.filename, True)
+        self.emitter = Emitter(self.event_queue, self.watch, timeout=0.2)
+        # self.to_watch = ObservedWatch(self.filename, True)
+        # self.to_emitter = Emitter(self.event_queue, self.to_watch, timeout=0.2)
+
+    def teardown(self):
+        if os.path.exists(self.filename):
+            rm(p(self.filename))
+        if os.path.exists(p()):
+            rm(p(), recursive=True)
+
+    def test___init__(self):
+        SLEEP_TIME = 1
+        self.emitter.start()
+        sleep(SLEEP_TIME)
+        touch(self.filename)
+        sleep(SLEEP_TIME)
+        with open(self.filename, 'w+') as f:
+            f.write("Hello world!")
+        sleep(SLEEP_TIME)
+        rm(self.filename)
+        sleep(SLEEP_TIME)
+        self.emitter.stop()
+
+        # What we need here for the tests to pass is a collection type
+        # that is:
+        #   * unordered
+        #   * non-unique
+        # A multiset! Python's collections.Counter class seems appropriate.
+        expected = set(
+            [
+                FileCreatedEvent(self.filename),
+                FileModifiedEvent(self.filename),
+                FileDeletedEvent(self.filename),
+            ]
+        )
 
         got = set()
         while True:

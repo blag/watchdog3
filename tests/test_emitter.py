@@ -35,7 +35,13 @@ if platform.is_linux():
     from watchdog.observers.inotify import InotifyFullEmitter
 elif platform.is_darwin():
     pytestmark = pytest.mark.skip('WATCHDOG-8')
-    from watchdog.observers.fsevents2 import FSEventsEmitter as Emitter
+    if 'FSEVENTS_VERSION' not in os.environ:
+        from watchdog.observers.kqueue import KqueueEmitter as Emitter
+    elif os.environ['FSEVENTS_VERSION'] == 2:
+        from watchdog.observers.fsevents2 import FSEventsEmitter as Emitter
+    else:
+        from watchdog.observers.fsevents import FSEventsEmitter as Emitter
+
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
